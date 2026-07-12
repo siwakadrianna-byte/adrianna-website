@@ -266,7 +266,8 @@ footer{border-top:1px solid var(--line-soft);padding:34px 0}
   border:1px solid var(--line-soft);display:block;
   transition:box-shadow .35s,border-color .3s}
 /* gentle reveal that can NEVER hide content: image starts faintly, fades to full on load */
-.tile img{width:100%;height:auto;display:block;
+/* width:100% + height:auto shows the WHOLE image at its true proportions — never cropped */
+.tile img{width:100%;height:auto;display:block;object-fit:contain;
   opacity:0;transition:opacity .6s ease,transform .8s cubic-bezier(.2,.8,.2,1)}
 .tile img.loaded,.tile img.in{opacity:1}
 .no-js .tile img{opacity:1}
@@ -274,8 +275,17 @@ footer{border-top:1px solid var(--line-soft);padding:34px 0}
 .tile:hover img{transform:scale(1.045)}
 .tile .idx{position:absolute;top:10px;left:12px;z-index:2;font-family:"MonoFace",monospace;
   font-size:.66rem;letter-spacing:.08em;color:#fff;mix-blend-mode:difference;opacity:.75}
+/* play button on video tiles */
+.tile .play{position:absolute;inset:0;z-index:3;margin:auto;width:64px;height:64px;
+  display:grid;place-items:center;border-radius:50%;pointer-events:none;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(3px);color:#fff;font-size:1.5rem;
+  padding-left:5px;transition:transform .3s,background .3s}
+.tile.is-video:hover .play{transform:scale(1.12);background:var(--pop)}
 
 /* lightbox */
+#lbVid{max-width:94vw;max-height:88vh;width:auto;height:auto;border-radius:10px;
+  box-shadow:0 30px 90px -20px rgba(0,0,0,.8);background:#000}
+
 .lb{position:fixed;inset:0;z-index:200;display:none;place-items:center;
   background:rgba(6,5,8,.92);backdrop-filter:blur(6px);padding:4vw}
 .lb.open{display:grid}
@@ -317,7 +327,7 @@ footer{border-top:1px solid var(--line-soft);padding:34px 0}
         <span class="mono">The full archive</span><span class="rule"></span>
       </div>
       <h1>GALLERY</h1>
-      <p>Every piece, from every project — <b>57 works</b> pulled out of their folders and laid into one mosaic. Graphic design, content &amp; brand for web3 and culture-first worlds.</p>
+      <p>Every piece, from every project — <b>38 works</b> pulled out of their folders and laid into one mosaic. Graphic design, content &amp; brand for web3 and culture-first worlds.</p>
     </div>
     <div class="masonry" id="masonry"></div>
   </section>
@@ -340,22 +350,26 @@ footer{border-top:1px solid var(--line-soft);padding:34px 0}
   <button class="close" id="lbClose" aria-label="Close">✕</button>
   <button class="nav prev" id="lbPrev" aria-label="Previous">‹</button>
   <img id="lbImg" src="" alt="">
+  <video id="lbVid" style="display:none" controls playsinline preload="metadata"></video>
   <button class="nav next" id="lbNext" aria-label="Next">›</button>
   <div class="count" id="lbCount"></div>
 </div>
 
 <script>
-const IMAGES = [{"src": "gallery/001.jpg", "w": 1200, "h": 1200}, {"src": "gallery/002.jpg", "w": 848, "h": 1200}, {"src": "gallery/003.jpg", "w": 858, "h": 1200}, {"src": "gallery/004.jpg", "w": 848, "h": 1200}, {"src": "gallery/005.jpg", "w": 848, "h": 1200}, {"src": "gallery/006.jpg", "w": 1200, "h": 1200}, {"src": "gallery/007.jpg", "w": 1200, "h": 1200}, {"src": "gallery/008.jpg", "w": 1200, "h": 1200}, {"src": "gallery/009.jpg", "w": 1200, "h": 1176}, {"src": "gallery/010.jpg", "w": 960, "h": 1200}, {"src": "gallery/011.jpg", "w": 960, "h": 1200}, {"src": "gallery/012.jpg", "w": 960, "h": 1200}, {"src": "gallery/013.jpg", "w": 960, "h": 1200}, {"src": "gallery/014.jpg", "w": 1200, "h": 1200}, {"src": "gallery/015.jpg", "w": 1200, "h": 1200}, {"src": "gallery/016.jpg", "w": 800, "h": 1200}, {"src": "gallery/017.jpg", "w": 1200, "h": 721}, {"src": "gallery/018.jpg", "w": 1200, "h": 721}, {"src": "gallery/019.jpg", "w": 1000, "h": 1200}, {"src": "gallery/020.jpg", "w": 960, "h": 1200}, {"src": "gallery/021.jpg", "w": 1000, "h": 1200}, {"src": "gallery/022.jpg", "w": 960, "h": 1200}, {"src": "gallery/023.jpg", "w": 900, "h": 1200}, {"src": "gallery/024.jpg", "w": 1000, "h": 1200}, {"src": "gallery/025.jpg", "w": 675, "h": 1200}, {"src": "gallery/026.jpg", "w": 900, "h": 1200}, {"src": "gallery/027.jpg", "w": 900, "h": 1200}, {"src": "gallery/028.jpg", "w": 1200, "h": 1200}, {"src": "gallery/029.jpg", "w": 1200, "h": 1200}, {"src": "gallery/030.jpg", "w": 1200, "h": 1200}, {"src": "gallery/031.jpg", "w": 1200, "h": 1200}, {"src": "gallery/032.jpg", "w": 1200, "h": 1200}, {"src": "gallery/033.jpg", "w": 1200, "h": 1200}, {"src": "gallery/034.jpg", "w": 1200, "h": 1200}, {"src": "gallery/035.jpg", "w": 1200, "h": 1200}, {"src": "gallery/036.jpg", "w": 850, "h": 1200}, {"src": "gallery/037.jpg", "w": 1200, "h": 580}, {"src": "gallery/038.jpg", "w": 832, "h": 1200}, {"src": "gallery/039.jpg", "w": 1200, "h": 580}, {"src": "gallery/040.jpg", "w": 821, "h": 1200}, {"src": "gallery/041.jpg", "w": 821, "h": 1200}, {"src": "gallery/042.jpg", "w": 821, "h": 1200}, {"src": "gallery/043.jpg", "w": 1200, "h": 400}, {"src": "gallery/044.jpg", "w": 1200, "h": 400}, {"src": "gallery/045.jpg", "w": 1200, "h": 1200}, {"src": "gallery/046.jpg", "w": 1200, "h": 1200}, {"src": "gallery/047.jpg", "w": 1200, "h": 400}, {"src": "gallery/048.jpg", "w": 1200, "h": 800}, {"src": "gallery/049.jpg", "w": 554, "h": 1200}, {"src": "gallery/050.jpg", "w": 1200, "h": 400}, {"src": "gallery/051.jpg", "w": 772, "h": 1200}, {"src": "gallery/052.jpg", "w": 1200, "h": 800}, {"src": "gallery/053.jpg", "w": 1200, "h": 1200}, {"src": "gallery/054.jpg", "w": 772, "h": 1200}, {"src": "gallery/055.jpg", "w": 772, "h": 1200}, {"src": "gallery/056.jpg", "w": 772, "h": 1200}, {"src": "gallery/057.jpg", "w": 772, "h": 1200}];
+const IMAGES = [{"src": "gallery/001.jpg", "w": 989, "h": 1400}, {"src": "gallery/002.jpg", "w": 1120, "h": 1400}, {"src": "gallery/003.jpg", "w": 1400, "h": 1400}, {"src": "gallery/004.jpg", "w": 989, "h": 1400}, {"src": "gallery/005.jpg", "w": 1400, "h": 466}, {"src": "gallery/006.jpg", "w": 958, "h": 1400}, {"src": "gallery/007.jpg", "w": 971, "h": 1400}, {"src": "gallery/008.jpg", "w": 1400, "h": 1372}, {"src": "gallery/009.jpg", "w": 971, "h": 1400}, {"src": "gallery/010.jpg", "w": 1400, "h": 466}, {"src": "gallery/011.jpg", "w": 1166, "h": 1400}, {"src": "gallery/012.jpg", "w": 989, "h": 1400}, {"src": "gallery/013.jpg", "w": 1400, "h": 1400}, {"src": "gallery/014.jpg", "w": 1120, "h": 1400}, {"src": "gallery/015.jpg", "w": 1400, "h": 466}, {"src": "gallery/016.jpg", "w": 1120, "h": 1400}, {"src": "gallery/017.jpg", "w": 958, "h": 1400}, {"src": "gallery/018.jpg", "w": 1400, "h": 1400}, {"src": "gallery/019.jpg", "w": 971, "h": 1400}, {"src": "gallery/020.jpg", "w": 1400, "h": 933}, {"src": "gallery/021.jpg", "w": 989, "h": 1400}, {"src": "gallery/022.jpg", "w": 1120, "h": 1400}, {"src": "gallery/023.jpg", "w": 1400, "h": 1269}, {"src": "gallery/024.jpg", "w": 933, "h": 1400}, {"src": "gallery/025.jpg", "w": 1400, "h": 998}, {"src": "gallery/026.jpg", "w": 1120, "h": 1400}, {"src": "gallery/027.jpg", "w": 901, "h": 1400}, {"src": "gallery/028.jpg", "w": 1400, "h": 1400}, {"src": "gallery/029.jpg", "w": 1001, "h": 1400}, {"src": "gallery/030.jpg", "w": 1400, "h": 998}, {"src": "gallery/031.jpg", "w": 1120, "h": 1400}, {"src": "gallery/032.jpg", "w": 940, "h": 1400}, {"src": "gallery/033.jpg", "w": 1400, "h": 1400}, {"src": "gallery/034.jpg", "w": 1400, "h": 2488, "video": "gallery/034.mp4"}, {"src": "gallery/035.jpg", "w": 1600, "h": 872}, {"src": "gallery/036.jpg", "w": 1400, "h": 1866, "video": "gallery/036.mp4"}, {"src": "gallery/037.jpg", "w": 1400, "h": 1400}, {"src": "gallery/038.jpg", "w": 1400, "h": 788, "video": "gallery/038.mp4"}];
 const m = document.getElementById('masonry');
 // reveal an image as soon as it decodes; also a safety timer so nothing can stay hidden
 function reveal(img){ img.classList.add('loaded'); }
 IMAGES.forEach((im,i)=>{
   const a=document.createElement('a');
-  a.className='tile'; a.href=im.src; a.setAttribute('role','button');
-  a.setAttribute('aria-label','Open image '+(i+1)+' of '+IMAGES.length);
-  a.style.setProperty('aspect-ratio', (im.w&&im.h)? (im.w+'/'+im.h) : '1');
+  a.className='tile'+(im.video?' is-video':''); a.href=im.video||im.src; a.setAttribute('role','button');
+  a.setAttribute('aria-label',(im.video?'Play video ':'Open image ')+(i+1)+' of '+IMAGES.length);
+  // aspect-ratio goes on the IMG (reserves space, no layout shift) — never on the
+  // clipping tile, so images always show in full and are never cropped.
+  const ar = (im.w&&im.h)? (im.w+'/'+im.h) : '1/1';
   a.innerHTML='<span class="idx">'+String(i+1).padStart(3,'0')+'</span>'+
-    '<img loading="lazy" decoding="async" src="'+im.src+'" width="'+im.w+'" height="'+im.h+'" alt="Work '+(i+1)+'">';
+    (im.video?'<span class="play" aria-hidden="true">▶</span>':'')+
+    '<img loading="lazy" decoding="async" src="'+im.src+'" width="'+im.w+'" height="'+im.h+'" style="aspect-ratio:'+ar+'" alt="Work '+(i+1)+'">';
   a.addEventListener('click',ev=>{ev.preventDefault();open(i);});
   m.appendChild(a);
   const img=a.querySelector('img');
@@ -367,11 +381,22 @@ setTimeout(()=>document.querySelectorAll('.tile img:not(.loaded)').forEach(revea
 
 /* lightbox */
 const lb=document.getElementById('lb'),lbImg=document.getElementById('lbImg'),
-      lbCount=document.getElementById('lbCount'); let cur=0;
+      lbVid=document.getElementById('lbVid'),lbCount=document.getElementById('lbCount'); let cur=0;
 function open(i){cur=i;show();lb.classList.add('open');lb.setAttribute('aria-hidden','false');}
-function close(){lb.classList.remove('open');lb.setAttribute('aria-hidden','true');}
-function show(){lbImg.src=IMAGES[cur].src;lbCount.textContent=(cur+1)+' / '+IMAGES.length;}
-function step(d){cur=(cur+d+IMAGES.length)%IMAGES.length;show();}
+function close(){lb.classList.remove('open');lb.setAttribute('aria-hidden','true');
+  lbVid.pause();lbVid.removeAttribute('src');lbVid.load();lbVid.style.display='none';lbImg.style.display='';}
+function show(){
+  const it=IMAGES[cur];
+  if(it.video){
+    lbImg.style.display='none';
+    lbVid.style.display='';lbVid.src=it.video;lbVid.play().catch(()=>{});
+  } else {
+    lbVid.pause();lbVid.removeAttribute('src');lbVid.style.display='none';
+    lbImg.style.display='';lbImg.src=it.src;
+  }
+  lbCount.textContent=(cur+1)+' / '+IMAGES.length;
+}
+function step(d){lbVid.pause();cur=(cur+d+IMAGES.length)%IMAGES.length;show();}
 document.getElementById('lbClose').onclick=close;
 document.getElementById('lbPrev').onclick=()=>step(-1);
 document.getElementById('lbNext').onclick=()=>step(1);
