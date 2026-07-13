@@ -627,28 +627,23 @@ const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     // ---- LIGHT theme: its OWN sunset palette, clearly visible on warm paper ----
     // dusk-orange, coral, hot pink, gold and a soft warm violet, woven by the same fields
-    vec3 s_gold   = vec3(1.00,0.72,0.22);
-    vec3 s_orange = vec3(1.00,0.46,0.12);   // deeper, more saturated sunset orange
-    vec3 s_coral  = vec3(1.00,0.33,0.30);
-    vec3 s_pink   = vec3(1.00,0.38,0.55);
-    vec3 s_violet = vec3(0.70,0.42,0.74);
-    vec3 sun = s_gold;
-    sun = mix(sun, s_orange, smoothstep(0.05,0.75,r.x));   // orange fills more of the field
-    sun = mix(sun, s_coral,  smoothstep(0.20,0.95,q.y));
-    sun = mix(sun, s_pink,   smoothstep(0.55,1.0, f)*0.85);
-    sun = mix(sun, s_violet, smoothstep(0.25,0.0, r.y) * 0.4);
-    // Pale paper base, but the MOVING field drives how strong the colour is —
-    // drifting blobs get a rich, saturated tint while the gaps stay pale paper,
-    // so the animation reads as high-contrast moving light (not a flat wash).
+    // Sunset-ORANGE moving light: soft but intense. Base stays pale paper;
+    // the drifting blobs glow in real orange so the animation clearly reads.
+    vec3 s_amber  = vec3(1.00,0.62,0.16);   // warm amber
+    vec3 s_orange = vec3(1.00,0.42,0.06);   // punchy sunset orange (core of the blobs)
+    vec3 s_coral  = vec3(1.00,0.34,0.24);   // coral edge
+    // weave mostly orange, with amber highlights and a coral edge — no pink/violet dilution
+    vec3 sun = s_orange;
+    sun = mix(sun, s_amber,  smoothstep(0.35,0.95, f));         // bright amber in the hot cores
+    sun = mix(sun, s_coral,  smoothstep(0.20,0.80, q.y)*0.6);   // coral where the flow turns
+
     vec3 paper = vec3(0.965,0.945,0.905);
-    // contrast-shaped moving mask: push mids apart so blobs are vivid, gaps stay light
-    float mask = smoothstep(0.30,0.80, f*0.55 + q.x*0.30 + r.y*0.15);
-    float amt = 0.14 + 0.72*mask;                    // 0.14 pale base -> up to ~0.86 in the moving blobs
-    // deepen the colour inside the strongest blobs for extra pop
-    vec3 sunDeep = sun*mix(1.0,0.82,mask);
-    vec3 lightCol = mix(paper, sunDeep, amt);
-    // cursor light = a warm sun-flare that brightens toward gold/orange
-    lightCol = mix(lightCol, mix(vec3(1.0,0.86,0.5), s_orange, r.x), glow*0.6);
+    // moving mask: lower threshold + steeper so blobs reach FULL intensity, gaps stay pale
+    float mask = smoothstep(0.18,0.62, f*0.6 + q.x*0.28 + r.y*0.12);
+    float amt = 0.10 + 0.85*mask;                    // pale base -> near-solid orange in the blobs
+    vec3 lightCol = mix(paper, sun, amt);
+    // cursor light = an intense warm orange sun-flare
+    lightCol = mix(lightCol, s_orange, glow*0.7);
 
     vec3 outc = mix(lightCol, darkCol, u_dark);
     gl_FragColor = vec4(outc, 1.0);
