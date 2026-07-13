@@ -598,10 +598,16 @@ PROJECTS.forEach((p,i)=>{
     sun = mix(sun, s_coral,  smoothstep(0.20,0.95,q.y));
     sun = mix(sun, s_pink,   smoothstep(0.55,1.0, f)*0.85);
     sun = mix(sun, s_violet, smoothstep(0.25,0.0, r.y) * 0.4);
-    // blend the sunset over warm paper — noticeably stronger so the oranges read
+    // Pale paper base, but the MOVING field drives how strong the colour is —
+    // drifting blobs get a rich, saturated tint while the gaps stay pale paper,
+    // so the animation reads as high-contrast moving light (not a flat wash).
     vec3 paper = vec3(0.965,0.945,0.905);
-    float amt = 0.60 + 0.34*darkMix;                 // stronger wash (was 0.42)
-    vec3 lightCol = mix(paper, sun, amt);
+    // contrast-shaped moving mask: push mids apart so blobs are vivid, gaps stay light
+    float mask = smoothstep(0.30,0.80, f*0.55 + q.x*0.30 + r.y*0.15);
+    float amt = 0.14 + 0.72*mask;                    // 0.14 pale base -> up to ~0.86 in the moving blobs
+    // deepen the colour inside the strongest blobs for extra pop
+    vec3 sunDeep = sun*mix(1.0,0.82,mask);
+    vec3 lightCol = mix(paper, sunDeep, amt);
     // cursor light = a warm sun-flare that brightens toward gold/orange
     lightCol = mix(lightCol, mix(vec3(1.0,0.86,0.5), s_orange, r.x), glow*0.6);
 
