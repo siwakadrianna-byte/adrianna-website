@@ -100,7 +100,10 @@ header.nav{
   backdrop-filter:blur(10px);
   background:color-mix(in srgb, var(--bg) 78%, transparent);
   border-bottom:1px solid var(--line-soft);
+  transition:transform .35s cubic-bezier(.2,.8,.2,1);
 }
+/* hide when scrolling down, reveal when scrolling up */
+header.nav.hide{transform:translateY(-100%)}
 .nav-inner{display:flex;align-items:center;justify-content:space-between;
   padding:14px 0;width:min(1240px,92vw);margin-inline:auto}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em;font-size:1.05rem}
@@ -624,22 +627,22 @@ const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     // ---- LIGHT theme: its OWN sunset palette, clearly visible on warm paper ----
     // dusk-orange, coral, hot pink, gold and a soft warm violet, woven by the same fields
-    vec3 s_gold   = vec3(1.00,0.78,0.35);
-    vec3 s_orange = vec3(1.00,0.55,0.24);
-    vec3 s_coral  = vec3(1.00,0.42,0.42);
-    vec3 s_pink   = vec3(1.00,0.45,0.62);
-    vec3 s_violet = vec3(0.72,0.47,0.78);
+    vec3 s_gold   = vec3(1.00,0.72,0.22);
+    vec3 s_orange = vec3(1.00,0.46,0.12);   // deeper, more saturated sunset orange
+    vec3 s_coral  = vec3(1.00,0.33,0.30);
+    vec3 s_pink   = vec3(1.00,0.38,0.55);
+    vec3 s_violet = vec3(0.70,0.42,0.74);
     vec3 sun = s_gold;
-    sun = mix(sun, s_orange, smoothstep(0.15,0.85,r.x));
+    sun = mix(sun, s_orange, smoothstep(0.05,0.75,r.x));   // orange fills more of the field
     sun = mix(sun, s_coral,  smoothstep(0.20,0.95,q.y));
-    sun = mix(sun, s_pink,   smoothstep(0.45,1.0, f));
-    sun = mix(sun, s_violet, smoothstep(0.30,0.0, r.y) * 0.5);
-    // blend the sunset over warm paper — strong enough to read, soft enough for text on top
+    sun = mix(sun, s_pink,   smoothstep(0.55,1.0, f)*0.85);
+    sun = mix(sun, s_violet, smoothstep(0.25,0.0, r.y) * 0.4);
+    // blend the sunset over warm paper — noticeably stronger so the oranges read
     vec3 paper = vec3(0.965,0.945,0.905);
-    float amt = 0.42 + 0.34*darkMix;                 // visible wash (was ~0.1)
+    float amt = 0.60 + 0.34*darkMix;                 // stronger wash (was 0.42)
     vec3 lightCol = mix(paper, sun, amt);
-    // cursor light = a warm sun-flare that brightens toward gold/coral
-    lightCol = mix(lightCol, mix(vec3(1.0,0.92,0.7), s_coral, r.x), glow*0.55);
+    // cursor light = a warm sun-flare that brightens toward gold/orange
+    lightCol = mix(lightCol, mix(vec3(1.0,0.86,0.5), s_orange, r.x), glow*0.6);
 
     vec3 outc = mix(lightCol, darkCol, u_dark);
     gl_FragColor = vec4(outc, 1.0);
@@ -729,6 +732,18 @@ const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   links.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>setOpen(false)));
   document.addEventListener('click',e=>{ if(nav.classList.contains('open') && !nav.contains(e.target)) setOpen(false); });
   addEventListener('keydown',e=>{ if(e.key==='Escape') setOpen(false); });
+
+  // hide header when scrolling down, reveal when scrolling up
+  let lastY=window.scrollY||0, ticking=false;
+  function updateNav(){
+    const y=Math.max(0, window.scrollY||document.documentElement.scrollTop||0);
+    if(!nav.classList.contains('open')){
+      if(y>lastY+4 && y>120) nav.classList.add('hide');
+      else if(y<lastY-4)     nav.classList.remove('hide');
+    }
+    lastY=y; ticking=false;
+  }
+  addEventListener('scroll',()=>{ if(!ticking){ requestAnimationFrame(updateNav); ticking=true; } }, {passive:true});
 })();
 
 </script>
