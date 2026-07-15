@@ -187,6 +187,24 @@ header.nav.hide{transform:translateY(-100%)}
   border-radius:50%;background:rgba(255,255,255,.85);filter:blur(.4px);
   transform:rotate(-18deg);
 }
+.hero h1 .glassball{cursor:pointer;transition:transform .35s cubic-bezier(.3,1.4,.5,1),opacity .5s ease,filter .5s ease}
+.hero h1 .glassball:hover{transform:scale(1.12)}
+.hero h1 .glassball:focus-visible{outline:2px solid var(--pop);outline-offset:4px}
+/* ball dissolving away as it bursts */
+.hero h1 .glassball.popped{transform:scale(.2);opacity:0;filter:blur(3px);pointer-events:none}
+
+/* soft glowing particles that scatter into the background and fade */
+.burst{position:fixed;inset:0;z-index:3;pointer-events:none;overflow:visible}
+.spark{position:absolute;border-radius:50%;will-change:transform,opacity;
+  mix-blend-mode:screen;filter:blur(1px);
+  animation:sparkFly var(--dur) cubic-bezier(.15,.7,.3,1) forwards}
+@keyframes sparkFly{
+  0%{transform:translate(0,0) scale(.6);opacity:0}
+  12%{opacity:var(--o)}
+  100%{transform:translate(var(--dx),var(--dy)) scale(var(--sc));opacity:0}
+}
+:root[data-theme="light"] .spark{mix-blend-mode:multiply;filter:blur(1.2px)}
+@media (prefers-color-scheme: light){.spark{mix-blend-mode:multiply}}
 
 .hero-meta{
   display:flex;flex-wrap:wrap;gap:28px 48px;align-items:flex-end;justify-content:space-between;
@@ -322,7 +340,7 @@ footer{border-top:1px solid var(--line-soft);padding:34px 0}
     <h1>
       <span class="l1 l2">MAKING</span>
       <span class="l1 out">BRANDS</span>
-      <span class="l1">LOUD<span class="glassball" aria-hidden="true"></span></span>
+      <span class="l1">LOUD<span class="glassball" id="glassball" role="button" tabindex="0" aria-label="Pop the glass ball"></span></span>
     </h1>
     <div class="hero-meta">
       <p class="hero-lede">I'm <b>Adrianna</b> — a graphic designer &amp; content creator building bold, internet-native identities for web3 and culture-first brands.</p>
@@ -734,6 +752,69 @@ PROJECTS.forEach((p,i)=>{
     lastY=y; ticking=false;
   }
   addEventListener('scroll',()=>{ if(!ticking){ requestAnimationFrame(updateNav); ticking=true; } }, {passive:true});
+})();
+
+/* ---------- GLASS BALL: click to softly burst into the background ---------- */
+(function(){
+  const ball=document.getElementById('glassball');
+  if(!ball) return;
+  const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // palette pulled from the living-gradient field, per theme
+  function isLight(){
+    const s=document.documentElement.getAttribute('data-theme');
+    if(s) return s==='light';
+    return !matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  const darkCols =['#FF3D9A','#8B6BFF','#CFF23A','#2A5CFF','#FF6A2B'];
+  const lightCols=['#FF6A16','#FF8A2B','#FF5436','#FFB25A','#F0721A'];
+
+  let busy=false;
+  function burst(){
+    if(busy) return; busy=true;
+    const r=ball.getBoundingClientRect();
+    const cx=r.left+r.width/2, cy=r.top+r.height/2;
+    const cols=isLight()?lightCols:darkCols;
+    ball.classList.add('popped');
+    if(reduce){ setTimeout(respawn,1400); return; }
+
+    const layer=document.createElement('div'); layer.className='burst'; document.body.appendChild(layer);
+    const N=30;
+    for(let i=0;i<N;i++){
+      const s=document.createElement('span'); s.className='spark';
+      const ang=(i/N)*Math.PI*2 + (i%3)*0.4;
+      const dist=70+ (i*11 % 190);                      // varied travel, deterministic (no Math.random)
+      const size=Math.max(r.width*0.75, 16) * (0.55 + (i%5)/4);
+      const col=cols[i%cols.length];
+      s.style.left=(cx)+'px'; s.style.top=(cy)+'px';
+      s.style.width=size+'px'; s.style.height=size+'px';
+      s.style.marginLeft=(-size/2)+'px'; s.style.marginTop=(-size/2)+'px';
+      s.style.background='radial-gradient(circle, '+col+' 0%, '+col+'cc 38%, transparent 72%)';
+      s.style.setProperty('--dx', (Math.cos(ang)*dist).toFixed(1)+'px');
+      s.style.setProperty('--dy', (Math.sin(ang)*dist - 26).toFixed(1)+'px');   // slight upward drift
+      s.style.setProperty('--sc', (1.6 + (i%4)*0.6).toFixed(2));
+      s.style.setProperty('--o', (0.7 + (i%3)*0.1).toFixed(2));
+      s.style.setProperty('--dur', (1400 + (i*45 % 1000))+'ms');
+      layer.appendChild(s);
+    }
+    // a soft central flash at the moment of the pop
+    const flash=document.createElement('span'); flash.className='spark';
+    const fs=Math.max(r.width*2.4,60);
+    flash.style.left=cx+'px'; flash.style.top=cy+'px';
+    flash.style.width=fs+'px'; flash.style.height=fs+'px';
+    flash.style.marginLeft=(-fs/2)+'px'; flash.style.marginTop=(-fs/2)+'px';
+    flash.style.background='radial-gradient(circle,'+cols[0]+'aa 0%, transparent 65%)';
+    flash.style.setProperty('--dx','0px'); flash.style.setProperty('--dy','0px');
+    flash.style.setProperty('--sc','1.8'); flash.style.setProperty('--o','0.85');
+    flash.style.setProperty('--dur','700ms');
+    layer.appendChild(flash);
+    // clean up the particle layer, then bring the ball back
+    setTimeout(()=>{ layer.remove(); }, 2800);
+    setTimeout(respawn, 3000);
+  }
+  function respawn(){ ball.classList.remove('popped'); busy=false; }
+
+  ball.addEventListener('click', burst);
+  ball.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); burst(); } });
 })();
 </script>
 
