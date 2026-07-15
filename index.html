@@ -205,6 +205,14 @@ header.nav.hide{transform:translateY(-100%)}
 }
 :root[data-theme="light"] .spark{mix-blend-mode:multiply;filter:blur(1.2px)}
 @media (prefers-color-scheme: light){.spark{mix-blend-mode:multiply}}
+/* slight page tremble when the ball pops */
+body.tremble main{animation:tremble .55s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes tremble{
+  0%,100%{transform:translate(0,0)}
+  10%{transform:translate(-2px,1px)}   25%{transform:translate(3px,-2px)}
+  40%{transform:translate(-3px,2px)}   55%{transform:translate(2px,2px)}
+  70%{transform:translate(-2px,-1px)}  85%{transform:translate(1px,-1px)}
+}
 
 .hero-meta{
   display:flex;flex-wrap:wrap;gap:28px 48px;align-items:flex-end;justify-content:space-between;
@@ -771,11 +779,44 @@ PROJECTS.forEach((p,i)=>{
   const lightCols=['#FF6A16','#FF8A2B','#FF5436','#FFB25A','#F0721A'];
 
   let busy=false;
+  // soft soap-bubble "pop" synthesised with Web Audio (no audio file needed)
+  let actx=null;
+  function bubblePop(){
+    try{
+      actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+      if(actx.state==='suspended') actx.resume();
+      const t=actx.currentTime;
+      const master=actx.createGain(); master.gain.value=0.0001; master.connect(actx.destination);
+      // a quick downward pitch "bloop" (the bubble collapsing)
+      const o=actx.createOscillator(); o.type='sine';
+      o.frequency.setValueAtTime(720, t);
+      o.frequency.exponentialRampToValueAtTime(180, t+0.12);
+      const g=actx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.22, t+0.012);   // fast attack
+      g.gain.exponentialRampToValueAtTime(0.0001, t+0.16);  // soft decay
+      o.connect(g); g.connect(master);
+      // a tiny wet "tick" of filtered noise for the surface-tension snap
+      const buf=actx.createBuffer(1, actx.sampleRate*0.05, actx.sampleRate);
+      const d=buf.getChannelData(0);
+      for(let i=0;i<d.length;i++){ d[i]=(1 - i/d.length) * (i%2?1:-1) * 0.5; } // cheap deterministic noise burst
+      const noise=actx.createBufferSource(); noise.buffer=buf;
+      const bp=actx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=2200; bp.Q.value=0.8;
+      const ng=actx.createGain(); ng.gain.setValueAtTime(0.12,t); ng.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
+      noise.connect(bp); bp.connect(ng); ng.connect(master);
+      master.gain.setValueAtTime(1, t);
+      o.start(t); o.stop(t+0.18); noise.start(t); noise.stop(t+0.05);
+    }catch(e){/* audio not available — ignore */}
+  }
+
   function burst(){
     if(busy) return; busy=true;
     const r=ball.getBoundingClientRect();
     const cx=r.left+r.width/2, cy=r.top+r.height/2;
     const cols=isLight()?lightCols:darkCols;
+    bubblePop();
+    document.body.classList.add('tremble');
+    setTimeout(()=>document.body.classList.remove('tremble'), 600);
     ball.classList.add('popped');
     if(reduce){ setTimeout(respawn,1400); return; }
 
