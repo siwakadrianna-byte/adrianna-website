@@ -110,9 +110,21 @@ header.nav.hide{transform:translateY(-100%)}
 .nav-inner{display:flex;align-items:center;justify-content:space-between;
   padding:14px 0;width:min(1240px,92vw);margin-inline:auto}
 /* brand name matches the nav links exactly (same font/size/spacing/uppercase), just in the theme colour */
+/* brand name = a window cut into the header: thick display font filled with the
+   background palette (fixed) so the letters read like a hole to the moving field,
+   the same effect the outlined "BRANDS" has in the hero */
 .brand{display:flex;align-items:center;
-  font-size:.82rem;letter-spacing:.04em;text-transform:uppercase;
-  color:var(--brand);transition:color .4s}
+  font-family:"DisplayFace",sans-serif;font-weight:800;
+  font-size:1.35rem;line-height:1;letter-spacing:.005em;text-transform:uppercase;
+  color:transparent;-webkit-background-clip:text;background-clip:text;
+  background-image:
+    radial-gradient(120% 380% at 18% 42%, #ff3d9a 0%, transparent 42%),
+    radial-gradient(120% 380% at 62% 55%, #8b6bff 0%, transparent 48%),
+    radial-gradient(120% 380% at 88% 60%, #2a5cff 0%, transparent 45%),
+    radial-gradient(120% 380% at 45% 88%, #cff23a 0%, transparent 40%);
+  background-color:#2a1a44;
+  background-attachment:fixed;background-size:100vw 100vh;background-position:top left;
+  -webkit-text-fill-color:transparent}
 .nav-links{display:flex;align-items:center;gap:26px}
 .nav-links a{font-size:.82rem;letter-spacing:.04em;text-transform:uppercase;color:var(--fg-soft);transition:color .2s}
 .nav-links a:hover{color:var(--fg)}
