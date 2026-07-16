@@ -100,31 +100,31 @@ body::after{
 /* ============ NAV ============ */
 header.nav{
   position:sticky;top:0;z-index:50;
-  backdrop-filter:blur(10px);
-  background:color-mix(in srgb, var(--bg) 78%, transparent);
   border-bottom:1px solid var(--line-soft);
   transition:transform .35s cubic-bezier(.2,.8,.2,1);
+}
+/* the header's translucent fill lives here so we can knock the brand letters out of it,
+   letting the live background canvas show through the ADRIANNA SIWAK shape */
+header.nav::before{
+  content:"";position:absolute;inset:0;z-index:-1;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  background:color-mix(in srgb, var(--bg) 78%, transparent);
+  -webkit-mask:var(--brand-mask, none);mask:var(--brand-mask, none);
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-size:var(--brand-mask-size, 100% 100%);mask-size:var(--brand-mask-size, 100% 100%);
+  -webkit-mask-position:top left;mask-position:top left;
 }
 /* hide when scrolling down, reveal when scrolling up */
 header.nav.hide{transform:translateY(-100%)}
 .nav-inner{display:flex;align-items:center;justify-content:space-between;
   padding:14px 0;width:min(1240px,92vw);margin-inline:auto}
-/* brand name matches the nav links exactly (same font/size/spacing/uppercase), just in the theme colour */
-/* brand name = a window cut into the header: thick display font filled with the
-   background palette (fixed) so the letters read like a hole to the moving field,
-   the same effect the outlined "BRANDS" has in the hero */
+/* brand name = a REAL window to the moving background: the header's fill layer has
+   the letter shapes masked out (via a canvas-drawn text mask), so the live animated
+   canvas behind the header shows through the letters — like the outlined BRANDS. */
 .brand{display:flex;align-items:center;
   font-family:"DisplayFace",sans-serif;font-weight:800;
   font-size:1.35rem;line-height:1;letter-spacing:.005em;text-transform:uppercase;
-  color:transparent;-webkit-background-clip:text;background-clip:text;
-  background-image:
-    radial-gradient(120% 380% at 18% 42%, #ff3d9a 0%, transparent 42%),
-    radial-gradient(120% 380% at 62% 55%, #8b6bff 0%, transparent 48%),
-    radial-gradient(120% 380% at 88% 60%, #2a5cff 0%, transparent 45%),
-    radial-gradient(120% 380% at 45% 88%, #cff23a 0%, transparent 40%);
-  background-color:#2a1a44;
-  background-attachment:fixed;background-size:100vw 100vh;background-position:top left;
-  -webkit-text-fill-color:transparent}
+  color:transparent;-webkit-text-fill-color:transparent;position:relative}
 .nav-links{display:flex;align-items:center;gap:26px}
 .nav-links a{font-size:.82rem;letter-spacing:.04em;text-transform:uppercase;color:var(--fg-soft);transition:color .2s}
 .nav-links a:hover{color:var(--fg)}
@@ -340,7 +340,7 @@ footer{border-top:1px solid var(--line-soft);padding:34px 0}
 <div class="wrap">
 <header class="nav" id="siteNav">
   <div class="nav-inner">
-    <a class="brand" href="#top">Adrianna&nbsp;Siwak</a>
+    <a class="brand" id="brandName" href="#top">Adrianna&nbsp;Siwak</a>
     <nav class="nav-links" id="navLinks">
       <a href="#work">Work</a>
       <a href="/gallery">Gallery</a>
@@ -756,6 +756,48 @@ PROJECTS.forEach((p,i)=>{
     lastY=y; ticking=false;
   }
   addEventListener('scroll',()=>{ if(!ticking){ requestAnimationFrame(updateNav); ticking=true; } }, {passive:true});
+})();
+
+/* ---------- BRAND NAME = window to the background ----------
+   Draw the brand text into a canvas and use it as a mask on the header's fill layer,
+   so the letter shapes become transparent and the live background canvas shows through. */
+(function(){
+  const nav=document.getElementById('siteNav'), brand=document.getElementById('brandName');
+  if(!nav||!brand) return;
+  function buildMask(){
+    const nr=nav.getBoundingClientRect(), br=brand.getBoundingClientRect();
+    if(!nr.width||!br.width) return;
+    const cs=getComputedStyle(brand);
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    const c=document.createElement('canvas');
+    c.width=Math.ceil(nr.width*dpr); c.height=Math.ceil(nr.height*dpr);
+    const x=c.getContext('2d'); x.scale(dpr,dpr);
+    // fill everything OPAQUE (this part of the header stays), then ERASE the letters
+    x.fillStyle='#fff'; x.fillRect(0,0,nr.width,nr.height);
+    x.globalCompositeOperation='destination-out';       // punch holes where we draw
+    x.font='800 '+parseFloat(cs.fontSize)+'px DisplayFace, sans-serif';
+    x.textBaseline='middle';                             // centre glyphs on the y we give
+    x.fillStyle='#000';
+    const tx=br.left-nr.left;
+    const ty=(br.top-nr.top)+br.height/2;               // exact vertical centre of the brand box
+    // apply the same uppercase + letter-spacing as the CSS
+    const txt='ADRIANNA SIWAK';
+    const ls=cs.letterSpacing==='normal'?0:parseFloat(cs.letterSpacing);
+    let cur=tx;
+    for(const ch of txt){ x.fillText(ch,cur,ty); cur+=x.measureText(ch).width+ls; }
+    const url=c.toDataURL('image/png');
+    nav.style.setProperty('--brand-mask','url("'+url+'")');
+    // pin the mask to cover the header exactly (no stretch that would shift the text)
+    nav.style.setProperty('--brand-mask-size', nr.width+'px '+nr.height+'px');
+  }
+  function whenFontReady(cb){
+    if(document.fonts && document.fonts.check('800 20px DisplayFace')){ cb(); return; }
+    if(document.fonts && document.fonts.ready){ document.fonts.ready.then(()=>setTimeout(cb,30)); }
+    else setTimeout(cb,300);
+  }
+  whenFontReady(buildMask);
+  addEventListener('load',()=>setTimeout(buildMask,120));
+  let rb; addEventListener('resize',()=>{ clearTimeout(rb); rb=setTimeout(buildMask,180); });
 })();
 
 /* ---------- GLASS BALL: click to softly burst into the background ---------- */
