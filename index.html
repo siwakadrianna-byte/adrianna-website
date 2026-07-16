@@ -1,8 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>document.documentElement.setAttribute("data-theme","dark");</script>
 <title>Adrianna Siwak — Graphic Designer & Content Creator</title>
 <meta name="description" content="Adrianna Siwak — graphic designer and content creator building bold, internet-native identities for web3 and culture-first brands." />
 
@@ -204,7 +205,7 @@ header.nav.hide{transform:translateY(-100%)}
   100%{transform:translate(var(--dx),var(--dy)) scale(var(--sc));opacity:0}
 }
 :root[data-theme="light"] .spark{mix-blend-mode:multiply;filter:blur(1.2px)}
-@media (prefers-color-scheme: light){.spark{mix-blend-mode:multiply}}
+/* light spark rule removed — dark-mode only */
 /* slight page tremble when the ball pops */
 body.tremble main{animation:tremble .55s cubic-bezier(.36,.07,.19,.97) both}
 @keyframes tremble{
@@ -333,7 +334,6 @@ footer{border-top:1px solid var(--line-soft);padding:34px 0}
       <a href="/gallery">Gallery</a>
       <a href="#about">About</a>
       <a href="#contact">Contact</a>
-      <button class="theme-btn" id="themeBtn" aria-label="Toggle color theme">◐ Theme</button>
     </nav>
     <button class="menu-btn" id="menuBtn" aria-label="Menu" aria-expanded="false" aria-controls="navLinks"><span></span></button>
   </div>
@@ -509,11 +509,7 @@ PROJECTS.forEach((p,i)=>{
   window.addEventListener('scroll', onScroll, {passive:true});
 
   // theme flag: 1 = dark, 0 = light. Read the live tokens.
-  function isDark(){
-    const s=document.documentElement.getAttribute('data-theme');
-    if(s) return s==='dark';
-    return matchMedia('(prefers-color-scheme: dark)').matches;
-  }
+  function isDark(){ return true; }   // site is dark-mode only
   let darkT = isDark()?1:0;      // target
   let darkS = darkT;             // smoothed (for a soft cross-fade on toggle)
 
@@ -722,20 +718,6 @@ PROJECTS.forEach((p,i)=>{
   requestAnimationFrame(frame);
 })();
 
-/* ---------- THEME TOGGLE ---------- */
-(function(){
-  const root=document.documentElement, btn=document.getElementById('themeBtn');
-  function current(){
-    const set=root.getAttribute('data-theme');
-    if(set)return set;
-    return matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
-  }
-  btn.addEventListener('click',()=>{
-    const next=current()==='dark'?'light':'dark';
-    root.setAttribute('data-theme',next);
-    // the gradient field reads the theme itself and cross-fades
-  });
-})();
 
 /* ---------- MOBILE MENU ---------- */
 (function(){
@@ -770,11 +752,7 @@ PROJECTS.forEach((p,i)=>{
   if(!ball) return;
   const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   // palette pulled from the living-gradient field, per theme
-  function isLight(){
-    const s=document.documentElement.getAttribute('data-theme');
-    if(s) return s==='light';
-    return !matchMedia('(prefers-color-scheme: dark)').matches;
-  }
+  function isLight(){ return false; }   // site is dark-mode only
   const darkCols =['#FF3D9A','#8B6BFF','#CFF23A','#2A5CFF','#FF6A2B'];
   const lightCols=['#FF6A16','#FF8A2B','#FF5436','#FFB25A','#F0721A'];
 
