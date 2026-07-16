@@ -125,7 +125,7 @@ header.nav.hide{transform:translateY(-100%)}
   font-family:"DisplayFace",sans-serif;font-weight:800;
   font-size:1.35rem;line-height:1;letter-spacing:.005em;text-transform:uppercase;
   color:transparent;-webkit-text-fill-color:transparent;position:relative;
-  -webkit-text-stroke:1.4px var(--fg);text-stroke:1.4px var(--fg)}   /* white outline, like BRANDS */
+  -webkit-text-stroke:.5px var(--fg);text-stroke:.5px var(--fg)}   /* fine white outline, like BRANDS */
 .nav-links{display:flex;align-items:center;gap:26px}
 .nav-links a{font-size:.82rem;letter-spacing:.04em;text-transform:uppercase;color:var(--fg-soft);transition:color .2s}
 .nav-links a:hover{color:var(--fg)}
@@ -814,16 +814,28 @@ const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     // fill everything OPAQUE (this part of the header stays), then ERASE the letters
     x.fillStyle='#fff'; x.fillRect(0,0,nr.width,nr.height);
     x.globalCompositeOperation='destination-out';       // punch holes where we draw
-    x.font='800 '+parseFloat(cs.fontSize)+'px DisplayFace, sans-serif';
-    x.textBaseline='middle';                             // centre glyphs on the y we give
+    const fsz=parseFloat(cs.fontSize);
+    x.font=cs.fontWeight+' '+fsz+'px DisplayFace, sans-serif';
+    x.textAlign='left'; x.textBaseline='alphabetic';
     x.fillStyle='#000';
+    // match the browser's letter-spacing natively (so glyph positions are identical)
+    const ls=cs.letterSpacing==='normal'?'0px':cs.letterSpacing;
+    if('letterSpacing' in x) x.letterSpacing=ls;
+    // vertical: place the alphabetic baseline exactly where the element renders it.
+    // text is vertically centred in the line box; baseline = boxTop + (lineH-fontH)/2 + ascent
+    const m=x.measureText('ADRIANNA SIWAK');
+    const ascent=m.fontBoundingBoxAscent||m.actualBoundingBoxAscent||fsz*0.72;
+    const descent=m.fontBoundingBoxDescent||m.actualBoundingBoxDescent||fsz*0.20;
+    const boxTop=br.top-nr.top;
+    const ty=boxTop + (br.height-(ascent+descent))/2 + ascent;
     const tx=br.left-nr.left;
-    const ty=(br.top-nr.top)+br.height/2;               // exact vertical centre of the brand box
-    // apply the same uppercase + letter-spacing as the CSS
-    const txt='ADRIANNA SIWAK';
-    const ls=cs.letterSpacing==='normal'?0:parseFloat(cs.letterSpacing);
-    let cur=tx;
-    for(const ch of txt){ x.fillText(ch,cur,ty); cur+=x.measureText(ch).width+ls; }
+    // draw whole string at once so native letter-spacing applies uniformly
+    if('letterSpacing' in x){
+      x.fillText('ADRIANNA SIWAK', tx, ty);
+    } else {
+      let cur=tx, lsn=parseFloat(ls)||0;
+      for(const ch of 'ADRIANNA SIWAK'){ x.fillText(ch,cur,ty); cur+=x.measureText(ch).width+lsn; }
+    }
     const url=c.toDataURL('image/png');
     nav.style.setProperty('--brand-mask','url("'+url+'")');
     // pin the mask to cover the header exactly (no stretch that would shift the text)
